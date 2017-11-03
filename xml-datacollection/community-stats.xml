@@ -1,0 +1,11 @@
+<xml-groups>
+    <xml-group name="gitBranchesByName" resource-type="contributor" resource-xpath="names" key-xpath="@name">
+      <xml-object name="name" type="string" xpath="@name" />
+      <xml-object name="count" type="gauge" xpath="@count" />
+    </xml-group>
+    <xml-group name="gitCommits" resource-type="node" resource-xpath="/">
+      <xml-object name="gitCommitsTotal" type="gauge" xpath="total" />
+      <xml-object name="gitCommitsL7Days" type="gauge" xpath="last_7days" />
+      <xml-object name="pullRequests" type="gauge" xpath="open_pulls" />
+    </xml-group>
+</xml-groups>

@@ -1,0 +1,62 @@
+= Community Statistics
+
+This script collects some metrics from the OpenNMS project.
+With the current script the following metrics will be collected and built in a JSON format to be collected with the OpenNMS JSON data collector.
+
+- Total commits over all branches
+- Total commits over all branches last 7 days
+- Number of branches per contributor as a dynamic table
+- Total number of open pull requests
+
+== Collectd Configuration
+
+Drop the `datacollection/community-stats.xml` file in `${OPENNMS_HOME}/etc/xml-datacollection` folder.
+
+Add data collection package for service `JSON-Community-Stats` in your `collectd-configuration.xml`.
+The metrics will be collected every 12 minutes (720s).
+
+[source, xml]
+----
+<package name="default-datacollection-720">
+  <filter>IPADDR != '0.0.0.0'</filter>
+  <include-range begin="0.0.0.1" end="255.255.255.254"/>
+  <include-range begin="::1" end="ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"/>
+
+  <service name="JSON-Community-Stats" interval="720000" user-defined="true" status="on">
+    <parameter key="handler-class" value="org.opennms.protocols.json.collector.DefaultJsonCollectionHandler"/>
+    <parameter key="collection" value="json-community-stats"/>
+  </service>
+</package>
+
+<collector service="JSON-Community-Stats" class-name="org.opennms.protocols.xml.collector.XmlCollector"/>
+----
+
+Add collection package for the `json-community-stats` in your `xml-datacollection-config.xml`
+
+.Replace `{{ JSON_OUTPUT }}` with the JSON output location in your cronjob and include the collection metric groups
+[source, xml]
+----
+<xml-collection name="json-community-stats">
+  <rrd step="720">
+    <rra>RRA:AVERAGE:0.5:1:2016</rra>
+    <rra>RRA:AVERAGE:0.5:12:1488</rra>
+    <rra>RRA:AVERAGE:0.5:288:366</rra>
+    <rra>RRA:MAX:0.5:288:366</rra>
+    <rra>RRA:MIN:0.5:288:366</rra>
+  </rrd>
+  <xml-source url="file:///{{ JSON_OUTPUT }}">
+    <import-groups>xml-datacollection/community-stats.xml</import-groups>
+  </xml-source>
+</xml-collection>
+----
+
+Assign the service `JSON-Community-Stats` to your node with the JSON file.
+
+== Grafana Dashboard
+
+The Grafana dashboard visualizes the collected metrics can be found in `grafana/community-statistics.json`.
+Before import, replace the ${SERVER_WITH_STATS} placeholder with the node which contains the data collection.
+
+== Author
+
+Ronny Trommer <ronny@opennms.org>

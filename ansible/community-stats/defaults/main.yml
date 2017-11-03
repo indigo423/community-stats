@@ -1,0 +1,5 @@
+---
+SOURCE_HOME: '/usr/src/opennms-src'
+GIT_URL: 'https://github.com/OpenNMS/opennms.git'
+JSON_OUTPUT: '/usr/src/community-stats.json'
+SCRIPT_LOCATION: '/opt/community-stats/git-branch-metrics.sh'

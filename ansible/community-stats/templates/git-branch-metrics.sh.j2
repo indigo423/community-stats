@@ -1,0 +1,62 @@
+#!/bin/bash
+# Script to get some Git statistics for the OpenNMS project.
+#
+# Repo: https://github.com/indigo423/community-stats
+#
+
+# Directory on local hard disk to clone the OpenNMS source repository
+SOURCE_HOME={{ SOURCE_HOME }}
+GIT_URL={{ GIT_URL }}
+
+# Git is required
+if [ ! -f $(which git) ]; then
+  echo "Command git not found and is required"
+  exit 1
+fi
+
+# Create directory if not exist
+mkdir -p ${SOURCE_HOME}
+cd ${SOURCE_HOME}
+
+# Check if source code is cloned already
+git status &>/dev/null
+RESULT=${?}
+
+# Git command fails if the code is not cloned,
+if [ ! ${RESULT} -eq 0 ]; then
+  cd /
+  git clone ${GIT_URL} ${SOURCE_HOME}
+  cd ${SOURCE_HOME}
+fi
+
+# Fetch all remote new created remote branches
+git fetch --all &>/dev/null
+
+# Cleanup all deleted remote branches
+git remote prune origin &>/dev/null
+
+# Get all commits from all branches
+COMMITS_TOTAL=$(git rev-list --all --count)
+
+# Get all commits from all branches last 7 days
+LAST_7DAYS=$(git rev-list --since="7 days ago" --all --count)
+
+# Get all open pull requests from GitHub API
+PULL_REQUESTS=$(curl -s "https://api.github.com/repos/OpenNMS/opennms/pulls?state=open" | grep -e "\"url.*pulls" | wc -l)
+
+# Build JSON output for OpenNMS data collection
+echo "{\"total\": ${COMMITS_TOTAL},"
+echo "\"last_7days\": ${LAST_7DAYS},"
+echo "\"open_pulls\": ${PULL_REQUESTS},"
+echo "\"names\":"
+echo "["
+RESULT=$(git for-each-ref --format='%(authorname) %09 %(refname)' | grep -v tags | sort -k7 | awk -F'\t' {'print $1'} | uniq -c | sort -r |
+  while IFS= read -r line; do
+    COUNT=$(awk '{print $1}' <<< ${line})
+    NAME=$(awk '{print $2 " " $3 " " $4}' <<< ${line})
+    NAME="${NAME%"${NAME##*[![:space:]]}"}"
+    echo "{\"name\": \"${NAME}\", \"count\": \"${COUNT}\"},"
+  done)
+echo "${RESULT%?}"
+echo "]"
+echo "}"

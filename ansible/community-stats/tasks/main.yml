@@ -1,0 +1,11 @@
+# Install the script on local system
+- name: Install git-branch script
+  template: src=git-branch-metrics.sh.j2 dest={{ SCRIPT_LOCATION }} mode=0755
+
+# Create a cronjob to build the JSON file with statistics every 15 minutes
+- name: Update opennms git repository
+  cron:
+    name: "opennms git repository"
+    minute: "*/15"
+    user: root
+    job: "{{ SCRIPT_LOCATION }} > {{ JSON_OUTPUT }}"
